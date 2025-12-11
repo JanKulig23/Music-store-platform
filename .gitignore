@@ -1,0 +1,10 @@
+# Visual Paradigm backup files
+*.bak
+*.vpp.bak
+*.vbk
+
+# Visual Paradigm lock files
+*.lck
+.lck
+id.txt
+vp.log
