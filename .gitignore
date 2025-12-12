@@ -2,6 +2,7 @@
 *.bak
 *.vpp.bak
 *.vbk
+*bak_000f
 
 # Visual Paradigm lock files
 *.lck
