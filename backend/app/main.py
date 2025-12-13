@@ -1,0 +1,20 @@
+from fastapi import FastAPI
+# Importujemy router z modułu tenancy
+from app.modules.tenancy.router import router as tenancy_router
+
+app = FastAPI(
+    title="Music Store SaaS Platform",
+    description="Backend API dla platformy SaaS sklepu muzycznego",
+    version="0.1.0"
+)
+
+# Rejestracja routerów
+app.include_router(tenancy_router)
+
+@app.get("/")
+def read_root():
+    return {"message": "System działa! Witaj w Music Store SaaS."}
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}

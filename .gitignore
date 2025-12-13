@@ -2,10 +2,15 @@
 *.bak
 *.vpp.bak
 *.vbk
-*bak_000f
+*bak_*
 
 # Visual Paradigm lock files
 *.lck
 .lck
 id.txt
 vp.log
+
+venv/
+__pycache__/
+.env
+*.db
