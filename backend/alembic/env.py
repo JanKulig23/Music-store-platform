@@ -14,6 +14,9 @@ from app.core.database import Base
 # Musimy zaimportować WSZYSTKIE modele, które chcemy stworzyć w bazie
 from app.modules.tenancy.models import Tenant
 from app.modules.catalog.models import GlobalProduct
+from app.modules.catalog.models import GlobalProduct, Product
+from app.modules.inventory.models import Store, Inventory
+from app.modules.sales.models import StoreOrder, OrderItem
 
 # --- KONIEC NASZYCH DODATKÓW ---
 
