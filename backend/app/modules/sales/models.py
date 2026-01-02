@@ -36,6 +36,6 @@ class OrderItem(Base):
     product_id = Column(Integer, ForeignKey("products.product_id"), nullable=False)
     
     quantity = Column(Integer, nullable=False)
-    unit_price = Column(Float, nullable=False) # Cena w momencie zakupu (bo cena produktu może się zmienić jutro)
+    unit_price = Column(Float, nullable=False) # Cena w momencie zakupu
 
     order = relationship("StoreOrder", back_populates="items")

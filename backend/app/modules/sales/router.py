@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.sales import models, schemas
-# Importujemy modele innych modułów, bo musimy sprawdzać stany i ceny!
 from app.modules.catalog.models import Product
 from app.modules.inventory.models import Inventory
 
@@ -23,16 +22,15 @@ def create_order(order_data: schemas.OrderCreate, db: Session = Depends(get_db))
     total_cost = 0.0
     db_order_items = []
 
-    # Rozpoczynamy transakcję (wszystko albo nic)
+    # Rozpoczynamy transakcję
     try:
-        # Tworzymy nagłówek zamówienia
         new_order = models.StoreOrder(
             tenant_id=order_data.tenant_id,
             customer_email=order_data.customer_email,
             status="NEW"
         )
         db.add(new_order)
-        db.flush() # Żeby dostać ID zamówienia przed commitem
+        db.flush() 
 
         for item in order_data.items:
             # A. Pobierz produkt (żeby znać aktualną cenę)

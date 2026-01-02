@@ -2,14 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.inventory import models, schemas
-from app.modules.catalog.models import Product  # Potrzebne do pobrania nazwy produktu
+from app.modules.catalog.models import Product 
 
 router = APIRouter(
     prefix="/inventory",
     tags=["Inventory (Magazyn)"]
 )
 
-# 1. Dodaj nową lokalizację (np. Sklep w Warszawie)
+# 1. Dodaj nową lokalizację
 @router.post("/stores/", response_model=schemas.StoreResponse)
 def create_store(store: schemas.StoreCreate, db: Session = Depends(get_db)):
     new_store = models.Store(**store.dict())
@@ -18,10 +18,9 @@ def create_store(store: schemas.StoreCreate, db: Session = Depends(get_db)):
     db.refresh(new_store)
     return new_store
 
-# 2. Ustaw stan magazynowy (Przyjęcie towaru)
+# 2. Ustaw stan magazynowy 
 @router.post("/stock/", response_model=schemas.StockResponse)
 def update_stock(stock_data: schemas.StockUpdate, db: Session = Depends(get_db)):
-    # Sprawdź czy taki wpis już istnieje
     inventory_item = db.query(models.Inventory).filter(
         models.Inventory.store_id == stock_data.store_id,
         models.Inventory.product_id == stock_data.product_id

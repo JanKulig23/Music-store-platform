@@ -12,7 +12,7 @@ class Store(Base):
     store_id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(Integer, ForeignKey("tenants.tenant_id"), nullable=False, index=True)
     
-    name = Column(String(100), nullable=False)  # np. "Magazyn Główny"
+    name = Column(String(100), nullable=False) 
     city = Column(String(100), nullable=False)
     address = Column(String(200))
 
@@ -24,7 +24,7 @@ class Inventory(Base):
     __tablename__ = "inventory"
 
     inventory_id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.tenant_id"), nullable=False) # Dla bezpieczeństwa (RLS)
+    tenant_id = Column(Integer, ForeignKey("tenants.tenant_id"), nullable=False) 
     
     store_id = Column(Integer, ForeignKey("stores.store_id"), nullable=False)
     product_id = Column(Integer, ForeignKey("products.product_id"), nullable=False)

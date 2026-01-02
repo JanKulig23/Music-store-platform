@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-# --- SKLEPY (LOKALIZACJE) ---
+#SKLEPY (LOKALIZACJE)
 class StoreCreate(BaseModel):
     tenant_id: int
     name: str
@@ -12,12 +12,12 @@ class StoreResponse(StoreCreate):
     class Config:
         from_attributes = True
 
-# --- ZMIANA STANU MAGAZYNOWEGO ---
+#ZMIANA STANU MAGAZYNOWEGO
 class StockUpdate(BaseModel):
     tenant_id: int
     store_id: int
     product_id: int
-    quantity: int   # Nowa ilość (np. ustawiamy na 50 sztuk)
+    quantity: int   # Nowa ilość
 
 class StockResponse(BaseModel):
     inventory_id: int
