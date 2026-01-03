@@ -1,33 +1,38 @@
 from logging.config import fileConfig
+
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-import sys
-import os
 
-# --- DODANE PRZEZ NAS: Ustawienie ścieżki ---
-# Musimy dodać katalog bieżący do ścieżki, żeby Python widział folder 'app'
-sys.path.append(os.getcwd())
-
-# Importujemy naszą konfigurację bazy i modele
 from alembic import context
-from app.core.database import Base
-# Musimy zaimportować WSZYSTKIE modele, które chcemy stworzyć w bazie
-from app.modules.tenancy.models import Tenant
-from app.modules.catalog.models import GlobalProduct
-from app.modules.catalog.models import GlobalProduct, Product
-from app.modules.inventory.models import Store, Inventory
-from app.modules.sales.models import StoreOrder, OrderItem
 
-# --- KONIEC NASZYCH DODATKÓW ---
+# 1. IMPORTY
+from app.core.database import SQLALCHEMY_DATABASE_URL, Base
+# Importujemy modele
+from app.modules.tenancy.models import Tenant
+from app.modules.catalog.models import Product
+from app.modules.inventory.models import Inventory
+from app.modules.sales.models import StoreOrder 
 
 config = context.config
+
+# 2. KONFIGURACJA URL
+config.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# --- ZMIANA: Podpinamy metadane z naszego Base ---
 target_metadata = Base.metadata
-# -------------------------------------------------
+
+# --- NOWA FUNKCJA FILTRUJĄCA ---
+def include_object(object, name, type_, reflected, compare_to):
+    # Ignoruj tabele systemowe Oracle (zaczynające się od LOGMNR, MVIEW, itp.)
+    if type_ == "table" and name and name.upper().startswith(("LOGMNR", "MVIEW", "AQ$", "DEF$", "REPCAT$", "OL$", "WRI$", "LOGSTDBY")):
+        return False
+    # Ignoruj tabelę migracji samego Alembica (żeby sam siebie nie zjadł)
+    if name == "alembic_version":
+        return True
+    return True
+# -------------------------------
 
 def run_migrations_offline() -> None:
     url = config.get_main_option("sqlalchemy.url")
@@ -36,6 +41,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_object=include_object  # <-- DODANO TUTAJ
     )
 
     with context.begin_transaction():
@@ -50,7 +56,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, 
+            target_metadata=target_metadata,
+            include_object=include_object # <-- I DODANO TUTAJ
         )
 
         with context.begin_transaction():

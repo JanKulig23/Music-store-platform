@@ -1,21 +1,35 @@
-# Visual Paradigm backup files
+#Python & Venv
+venv/
+__pycache__/
+*.py[cod]
+*.log
+
+#Environment-
+.env
+.env.local
+
+#Database
+*.db
+*.sqlite3
+
+#IDE 
+.vscode/
+.idea/
+
+#Frontend (Node/React)
+node_modules/
+dist/
+build/
+npm-debug.log
+yarn-error.log
+.DS_Store
+
+#Visual Paradigm
 *.bak
 *.vpp.bak
 *.vbk
 *bak_*
-
-# Visual Paradigm lock files
 *.lck
 .lck
 id.txt
 vp.log
-
-venv/
-__pycache__/
-.env
-*.db
-
-node_modules/
-dist/
-npm-debug.log
-.DS_Store
