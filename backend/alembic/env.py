@@ -8,7 +8,7 @@ from alembic import context
 # 1. IMPORTY
 from app.core.database import SQLALCHEMY_DATABASE_URL, Base
 # Importujemy modele
-from app.modules.tenancy.models import Tenant
+from app.modules.tenancy.models import Tenant, User
 from app.modules.catalog.models import Product
 from app.modules.inventory.models import Inventory
 from app.modules.sales.models import StoreOrder 

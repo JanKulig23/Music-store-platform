@@ -1,9 +1,10 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware  # <-- IMPORT
+from fastapi.middleware.cors import CORSMiddleware  
 from app.modules.tenancy.router import router as tenancy_router
 from app.modules.catalog.router import router as catalog_router
 from app.modules.inventory.router import router as inventory_router
 from app.modules.sales.router import router as sales_router
+from app.modules.auth.router import router as auth_router
 
 app = FastAPI(
     title="Music Store SaaS Platform",
@@ -31,6 +32,7 @@ app.include_router(tenancy_router)
 app.include_router(catalog_router)
 app.include_router(inventory_router)
 app.include_router(sales_router)
+app.include_router(auth_router)
 
 @app.get("/")
 def read_root():
