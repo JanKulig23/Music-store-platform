@@ -1,61 +1,89 @@
 import React, { useState } from 'react';
-// Upewnij się, że importujesz instancję api, którą stworzyliśmy wcześniej (tę z interceptorem tokena)
 import api from '../../api'; 
 
-const Cart = ({ items, onClearCart }) => {
-  const [status, setStatus] = useState(null); // 'success', 'error' lub null
+// Dodajemy prop 'tenantId' (potrzebny tylko dla Gościa)
+const Cart = ({ items, onClearCart, tenantId }) => {
+  const [status, setStatus] = useState(null); // 'success', 'error'
+  const [guestEmail, setGuestEmail] = useState(""); // Nowe pole dla gościa
+  const [loading, setLoading] = useState(false);
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const isGuest = !localStorage.getItem('token'); // Sprawdzamy, czy to gość
 
   const handleCheckout = async () => {
     if (items.length === 0) return;
     setStatus(null);
+    setLoading(true);
 
-    // Przygotowujemy dane tak, jak chce backend (tylko lista ID i ilości)
-    // Backend sam sobie weźmie ID usera i sklepu z tokena.
-    const orderPayload = {
-      items: items.map(item => ({
+    // Wspólny payload dla obu przypadków (lista produktów)
+    const itemsPayload = items.map(item => ({
         product_id: item.product_id,
         quantity: item.quantity
-      }))
-    };
+    }));
 
     try {
-      // Strzelamy do endpointu, który stworzyliśmy w backendzie
-      await api.post('/orders/', orderPayload);
-      
+      if (!isGuest) {
+        // --- SCENARIUSZ 1: WŁAŚCICIEL (ZALOGOWANY) ---
+        // To jest Twoja stara logika
+        await api.post('/orders/', { items: itemsPayload });
+      } else {
+        // --- SCENARIUSZ 2: GOŚĆ (NOWA LOGIKA) ---
+        
+        // Walidacja dla gościa
+        if (!guestEmail.includes('@')) {
+            alert("Podaj poprawny email!");
+            setLoading(false);
+            return;
+        }
+        if (!tenantId) {
+            console.error("Brak ID sklepu w Cart.jsx");
+            setStatus('error');
+            setLoading(false);
+            return;
+        }
+
+        // Strzał do nowego endpointu
+        await api.post('/orders/guest', {
+            email: guestEmail,
+            items: itemsPayload,
+            tenant_id: tenantId
+        });
+      }
+
+      // --- WSPÓLNY SUKCES ---
       setStatus('success');
-      onClearCart(); // Czyścimy koszyk po udanym zakupie
-      
-      // Ukryj komunikat sukcesu po 5 sekundach
+      onClearCart();
+      setGuestEmail(""); 
       setTimeout(() => setStatus(null), 5000); 
+
     } catch (error) {
       console.error("Błąd zamówienia:", error);
       setStatus('error');
+    } finally {
+        setLoading(false);
     }
   };
 
-  // Jeśli koszyk jest pusty i nie ma komunikatu o sukcesie, wyświetl info
   if (items.length === 0 && status !== 'success') {
     return <div className="text-muted text-center py-3">Twój koszyk jest pusty.</div>;
   }
 
   return (
     <div>
-      {/* Komunikaty */}
+      {/* --- KOMUNIKATY --- */}
       {status === 'success' && (
         <div className="alert alert-success">
-          ✅ Zamówienie przyjęte! Sprawdź tabelę STORE_ORDERS w bazie.
+          ✅ {isGuest ? "Zamówienie wysłane! Sprawdź email." : "Zamówienie przyjęte do bazy!"}
         </div>
       )}
       
       {status === 'error' && (
         <div className="alert alert-danger">
-          ❌ Błąd zamówienia. Jesteś zalogowany? Masz uprawnienia?
+          ❌ Błąd zamówienia. Spróbuj ponownie.
         </div>
       )}
 
-      {/* Lista produktów w koszyku */}
+      {/* --- LISTA PRODUKTÓW --- */}
       <ul className="list-group mb-3">
         {items.map((item) => (
           <li key={item.product_id} className="list-group-item d-flex justify-content-between lh-sm">
@@ -68,21 +96,36 @@ const Cart = ({ items, onClearCart }) => {
         ))}
       </ul>
       
-      {/* Suma */}
+      {/* --- SUMA --- */}
       <div className="d-flex justify-content-between fw-bold mb-3 px-2 border-top pt-2">
         <span>Suma:</span>
         <span>{total.toFixed(2)} PLN</span>
       </div>
 
-      {/* Przyciski */}
+      {/* --- POLE EMAIL (TYLKO DLA GOŚCIA) --- */}
+      {isGuest && items.length > 0 && (
+          <div className="mb-3">
+              <label className="form-label small">Adres email (wymagane)</label>
+              <input 
+                type="email" 
+                className="form-control form-control-sm" 
+                placeholder="klient@przyklad.pl"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+              />
+          </div>
+      )}
+
+      {/* --- PRZYCISKI --- */}
       <div className="d-grid gap-2">
         <button 
             onClick={handleCheckout} 
             className="btn btn-success"
-            disabled={items.length === 0}
+            disabled={items.length === 0 || loading}
         >
-            💰 Zapłać i Zamów
+            {loading ? "Przetwarzanie..." : (isGuest ? "📨 Zamów jako Gość" : "💰 Zapłać i Zamów")}
         </button>
+        
         <button onClick={onClearCart} className="btn btn-outline-secondary btn-sm">
             Wyczyść koszyk
         </button>

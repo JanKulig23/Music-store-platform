@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProductList from '../modules/Catalog/ProductList'; 
 import Cart from '../modules/Cart/Cart';
-// WAŻNE: Upewnij się, że stworzyłeś ten plik w poprzednim kroku!
 import AddProductForm from '../modules/catalog/AddProductForm'; 
 import GlobalCatalog from '../modules/catalog/GlobalCatalog';
 

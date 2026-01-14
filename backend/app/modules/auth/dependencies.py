@@ -18,14 +18,20 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     try:
         # 1. Rozszyfruj token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
+        
+        # ZMIANA: W nowym routerze w 'sub' zapisujemy email, więc pobieramy go jako email
+        email: str = payload.get("sub")
+        
+        if email is None:
             raise credentials_exception
+            
     except JWTError:
         raise credentials_exception
     
-    # 2. Znajdź użytkownika w bazie
-    user = db.query(User).filter(User.user_id == user_id).first()
+    # 2. Znajdź użytkownika w bazie po EMAILU (bo to mamy w tokenie)
+    # ZMIANA: Szukamy w kolumnie User.email, a nie User.user_id
+    user = db.query(User).filter(User.email == email).first()
+    
     if user is None:
         raise credentials_exception
         
