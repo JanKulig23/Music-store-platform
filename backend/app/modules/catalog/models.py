@@ -34,3 +34,4 @@ class Product(Base):
     price = Column(Float, nullable=False)       # Własna cena Tenanta
     description = Column(Text, nullable=True)   # Własny opis
     sku = Column(String(50), index=True)        # Stock Keeping Unit (kod magazynowy)
+    stock_quantity = Column(Integer, default=0)

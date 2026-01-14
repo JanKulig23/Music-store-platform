@@ -54,7 +54,7 @@ const Cart = ({ items, onClearCart, tenantId }) => {
       setStatus('success');
       onClearCart();
       setGuestEmail(""); 
-      setTimeout(() => setStatus(null), 5000); 
+      setTimeout(() => setStatus(null), 20000); 
 
     } catch (error) {
       console.error("Błąd zamówienia:", error);

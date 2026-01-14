@@ -55,6 +55,10 @@ def create_local_product(
     product_data = product.dict()
     product_data['tenant_id'] = current_user.tenant_id  # <--- TU JEST KLUCZ!
     
+    # Jeśli frontend nie wysłał stock_quantity, upewniamy się, że jest 0 (lub to co w modelu)
+    if 'stock_quantity' not in product_data:
+        product_data['stock_quantity'] = 0
+
     new_product = models.Product(**product_data)
     db.add(new_product)
     db.commit()
@@ -67,13 +71,14 @@ def get_tenant_products(tenant_id: int, db: Session = Depends(get_db)):
     return db.query(models.Product).filter(models.Product.tenant_id == tenant_id).all()
 
 
-# --- EDYCJA PRODUKTÓW (ZMIANA CENY I OPISU) ---
+# --- EDYCJA PRODUKTÓW (ZMIANA CENY, OPISU I STANU) ---
 
-# Prosty schemat tylko dla tego endpointu (do aktualizacji)
+# Zaktualizowany schemat do aktualizacji
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
     price: Optional[float] = None
     description: Optional[str] = None
+    stock_quantity: Optional[int] = None # <--- NOWOŚĆ: Pole do edycji stanu
 
 @router.patch("/local/{product_id}")
 def update_product(
@@ -101,6 +106,10 @@ def update_product(
         product.price = product_data.price
     if product_data.description is not None:
         product.description = product_data.description
+    
+    # <--- NOWOŚĆ: Aktualizacja stanu magazynowego
+    if product_data.stock_quantity is not None:
+        product.stock_quantity = product_data.stock_quantity
 
     db.commit()
     db.refresh(product)

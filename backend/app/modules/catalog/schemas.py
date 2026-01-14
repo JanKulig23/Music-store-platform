@@ -1,28 +1,42 @@
 from pydantic import BaseModel
 from typing import Optional
 
-#GLOBALNE
-class GlobalProductCreate(BaseModel):
+# --- PRODUKTY GLOBALNE (HURTOWNIA) ---
+class GlobalProductBase(BaseModel):
     name: str
     base_description: Optional[str] = None
-    ean_code: str
-    category: str
+    ean_code: Optional[str] = None
+    category: Optional[str] = None
 
-class GlobalProductResponse(GlobalProductCreate):
+class GlobalProductCreate(GlobalProductBase):
+    pass
+
+class GlobalProductResponse(GlobalProductBase):
     global_id: int
+
     class Config:
         from_attributes = True
 
-#LOKALNE
-class ProductCreate(BaseModel):
-    tenant_id: int          # W przyszłości weźmiemy to z tokena JWT, na razie ręcznie
-    global_ref_id: Optional[int] = None
-    name: str
-    price: float
-    description: Optional[str] = None
-    sku: str
 
-class ProductResponse(ProductCreate):
+# --- PRODUKTY LOKALNE (SKLEPOWE) ---
+class ProductBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    price: float
+    sku: Optional[str] = None
+    # NOWOŚĆ: Dodajemy stan magazynowy (domyślnie 0)
+    stock_quantity: int = 0  
+
+class ProductCreate(ProductBase):
+    tenant_id: int 
+    global_ref_id: Optional[int] = None 
+
+class ProductResponse(ProductBase):
     product_id: int
+    tenant_id: int
+    global_ref_id: Optional[int] = None
+    # NOWOŚĆ: API zwróci stan magazynowy do Frontendu
+    stock_quantity: int  
+
     class Config:
         from_attributes = True
