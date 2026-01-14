@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 # Konfiguracja haszowania
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Konfiguracja JWT (W prawdziwym projekcie SECRET_KEY trzymamy w .env!)
+# Konfiguracja 
 SECRET_KEY = "bardzo_tajny_klucz_do_szyfrowania_tokenow_zmien_mnie"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
