@@ -4,6 +4,7 @@ import ProductList from '../modules/Catalog/ProductList';
 import Cart from '../modules/Cart/Cart';
 // WAŻNE: Upewnij się, że stworzyłeś ten plik w poprzednim kroku!
 import AddProductForm from '../modules/catalog/AddProductForm'; 
+import GlobalCatalog from '../modules/catalog/GlobalCatalog';
 
 const StorePage = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -57,6 +58,10 @@ const StorePage = () => {
       {/* --- SEKCJA ADMINISTRATORA (Tego brakowało w Twoim kodzie) --- */}
       <section className="mb-5">
         <AddProductForm onProductAdded={handleProductAdded} />
+
+        <div className="mt-4">
+          <GlobalCatalog onImportSuccess={handleProductAdded} />
+        </div>
       </section>
 
       <hr className="my-5" />

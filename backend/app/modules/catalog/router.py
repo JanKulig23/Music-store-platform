@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from typing import Optional
+from pydantic import BaseModel
 from app.core.database import get_db
 from app.modules.catalog import models, schemas
 # Importujemy strażnika (funkcję sprawdzającą token) i model User
@@ -63,3 +65,43 @@ def create_local_product(
 def get_tenant_products(tenant_id: int, db: Session = Depends(get_db)):
     # Zwraca produkty sklepu - to może być publiczne dla klientów
     return db.query(models.Product).filter(models.Product.tenant_id == tenant_id).all()
+
+
+# --- EDYCJA PRODUKTÓW (ZMIANA CENY I OPISU) ---
+
+# Prosty schemat tylko dla tego endpointu (do aktualizacji)
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    price: Optional[float] = None
+    description: Optional[str] = None
+
+@router.patch("/local/{product_id}")
+def update_product(
+    product_id: int, 
+    product_data: ProductUpdate, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    # 1. Szukamy produktu w bazie
+    product = db.query(models.Product).filter(models.Product.product_id == product_id).first()
+    
+    # 2. Sprawdzamy czy istnieje
+    if not product:
+        raise HTTPException(status_code=404, detail="Produkt nie istnieje")
+        
+    # 3. BEZPIECZEŃSTWO: Izolacja Tenantów!
+    # Sprawdzamy czy ten produkt należy do tego sklepu, którego właścicielem jest user.
+    if product.tenant_id != current_user.tenant_id:
+        raise HTTPException(status_code=403, detail="Nie możesz edytować cudzych produktów!")
+
+    # 4. Aktualizujemy pola, jeśli zostały przesłane (PATCH)
+    if product_data.name is not None:
+        product.name = product_data.name
+    if product_data.price is not None:
+        product.price = product_data.price
+    if product_data.description is not None:
+        product.description = product_data.description
+
+    db.commit()
+    db.refresh(product)
+    return product
