@@ -7,12 +7,9 @@ import GlobalCatalog from '../modules/catalog/GlobalCatalog';
 
 const StorePage = () => {
   const [cartItems, setCartItems] = useState([]);
-  // Ten stan służy do wymuszenia odświeżenia listy produktów po dodaniu nowego
   const [refreshKey, setRefreshKey] = useState(0); 
   const navigate = useNavigate();
 
-  // Tę funkcję przekażemy do formularza. 
-  // Jak formularz doda gitarę, ta funkcja się odpali i lista na dole się odświeży.
   const handleProductAdded = () => {
     setRefreshKey(oldKey => oldKey + 1);
   };
@@ -54,7 +51,7 @@ const StorePage = () => {
         </div>
       </header>
       
-      {/* --- SEKCJA ADMINISTRATORA (Tego brakowało w Twoim kodzie) --- */}
+      {/* SEKCJA ADMINISTRATORA */}
       <section className="mb-5">
         <AddProductForm onProductAdded={handleProductAdded} />
 
@@ -65,7 +62,7 @@ const StorePage = () => {
 
       <hr className="my-5" />
 
-      {/* --- SEKCJA PODGLĄDU SKLEPU --- */}
+      {/* SEKCJA PODGLĄDU SKLEPU */}
       <div className="row">
         <div className="col-md-12 mb-3">
             <h3>Podgląd Twojego Sklepu (Widok Klienta)</h3>

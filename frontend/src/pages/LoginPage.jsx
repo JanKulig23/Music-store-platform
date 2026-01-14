@@ -3,12 +3,11 @@ import api from '../api';
 import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
-  // Przełącznik: czy użytkownik chce się zalogować, czy zarejestrować?
   const [isRegistering, setIsRegistering] = useState(false);
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [companyName, setCompanyName] = useState(''); // Nowe pole tylko do rejestracji
+  const [companyName, setCompanyName] = useState(''); 
 
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
@@ -22,8 +21,6 @@ const LoginPage = () => {
 
     try {
       if (isRegistering) {
-        // --- ŚCIEŻKA REJESTRACJI (JSON) ---
-        // Backend oczekuje: email, password, company_name
         await api.post('/auth/register', {
           email: email,
           password: password,
@@ -31,13 +28,10 @@ const LoginPage = () => {
         });
         
         setSuccessMsg("🎉 Sklep otwarty! Teraz możesz się zalogować.");
-        setIsRegistering(false); // Automatycznie przełączamy na ekran logowania
-        setPassword(''); // Czyścimy hasło dla bezpieczeństwa
+        setIsRegistering(false); 
+        setPassword(''); 
 
       } else {
-        // --- ŚCIEŻKA LOGOWANIA (JSON) ---
-        // Uwaga: Tutaj zaszła zmiana względem starego kodu!
-        // Nie używamy już FormData. Wysyłamy zwykły obiekt JSON.
         const response = await api.post('/auth/login', {
           email: email,
           password: password

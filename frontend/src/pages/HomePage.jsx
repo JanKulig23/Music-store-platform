@@ -4,9 +4,7 @@ import ProductList from '../modules/Catalog/ProductList';
 import Cart from '../modules/Cart/Cart'; 
 
 const HomePage = () => {
-  // Tu wpisz ID swojego sklepu (np. 21). 
-  // To sprawia, że strona główna wyświetla produkty TEGO konkretnego sklepu.
-  const PUBLIC_STORE_ID = 21; 
+  const PUBLIC_STORE_ID = 21; //Tutaj modyfikujemy ID sklepu który się wyświetla
 
   const [cartItems, setCartItems] = useState([]);
 
@@ -54,7 +52,7 @@ const HomePage = () => {
           {/* LISTA PRODUKTÓW */}
           <div className="col-lg-8">
             <h3 className="mb-4 text-secondary">Nasze Produkty</h3>
-            {/* Przekazujemy ID sklepu, żeby ProductList wiedział, że to widok publiczny (bez edycji) */}
+            {/* Przekazujemy ID sklepu, żeby ProductList wiedział, że to widok publiczny */}
             <ProductList 
                 publicTenantId={PUBLIC_STORE_ID} 
                 onAddToCart={addToCart} 
@@ -68,8 +66,7 @@ const HomePage = () => {
                  🛒 Twój Koszyk
                </div>
                <div className="card-body">
-                 {/* --- TU BYŁA ZMIANA --- */}
-                 {/* Dodaliśmy tenantId={PUBLIC_STORE_ID}, żeby Koszyk wiedział gdzie wysłać zamówienie Gościa */}
+                 
                  <Cart 
                     items={cartItems} 
                     onClearCart={clearCart} 
