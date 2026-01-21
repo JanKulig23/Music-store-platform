@@ -7,40 +7,53 @@ class OrderItemCreate(BaseModel):
     product_id: int
     quantity: int
 
-# --- 2. ZAMÓWIENIE ZALOGOWANEGO UŻYTKOWNIKA (INPUT) ---
-class OrderCreate(BaseModel):
+# --- 2. DANE KLIENTA (WSPÓLNE POLA) ---
+# Tworzymy to raz, żeby nie pisać w kółko tego samego
+class CustomerDetails(BaseModel):
+    first_name: str
+    last_name: str
+    address: str
+    phone_number: str
+
+# --- 3. ZAMÓWIENIE ZALOGOWANEGO UŻYTKOWNIKA (INPUT) ---
+# Dziedziczy dane klienta (imię, adres) + listę zakupów
+class OrderCreate(CustomerDetails):
     items: List[OrderItemCreate]
 
-# --- 3. ZAMÓWIENIE GOŚCIA (INPUT) ---
-class GuestOrderCreate(BaseModel):
+# --- 4. ZAMÓWIENIE GOŚCIA (INPUT) ---
+# Dziedziczy dane klienta + email + tenant_id + listę zakupów
+class GuestOrderCreate(CustomerDetails):
     email: EmailStr
     tenant_id: int
     items: List[OrderItemCreate]
 
-# --- 4. SCHEMATY ODPOWIEDZI (RESPONSE) ---
+# --- 5. SCHEMATY ODPOWIEDZI (RESPONSE) ---
 
-# To jest to, co wysyłamy do frontendu wewnątrz zamówienia
 class OrderItemResponse(BaseModel):
     item_id: int
-    product_id: int  # Zmieniono z product_name na product_id (bo to mamy w bazie)
+    product_id: int
     quantity: int
     unit_price: float
 
     class Config:
         from_attributes = True
 
-# To jest główne zamówienie, które widzi właściciel
+# To widzi właściciel w panelu
 class OrderResponse(BaseModel):
     order_id: int
     tenant_id: int
     user_id: int
     total_amount: float
     status: str
+    created_at: Optional[datetime] = None
     
-    # NAPRAWA BŁĘDU: Pozwalamy na datę lub brak daty (None)
-    created_at: Optional[datetime] = None 
-    
-    # Lista pozycji (opcjonalnie, ale warto mieć)
+    # --- NOWE POLA W ODPOWIEDZI ---
+    # Dzięki temu właściciel zobaczy te dane w tabelce
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    address: Optional[str] = None
+    phone_number: Optional[str] = None
+
     items: List[OrderItemResponse] = []
 
     class Config:

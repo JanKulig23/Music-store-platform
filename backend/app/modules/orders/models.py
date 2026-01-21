@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
-from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from datetime import datetime
 
 class StoreOrder(Base):
     __tablename__ = "store_orders"
@@ -11,7 +11,16 @@ class StoreOrder(Base):
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False) # Kto kupił
     total_amount = Column(Float, nullable=False)
     status = Column(String(50), default="NEW") # NEW, PAID, SHIPPED
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Zmieniamy to na datetime.now, żeby pasowało do logiki w routerze (którą naprawialiśmy wcześniej)
+    created_at = Column(DateTime, default=datetime.now)
+
+    # --- NOWE KOLUMNY (DANE ADRESOWE) ---
+    first_name = Column(String(100), nullable=True)
+    last_name = Column(String(100), nullable=True)
+    address = Column(String(255), nullable=True)
+    phone_number = Column(String(20), nullable=True)
+    # ------------------------------------
 
     # Relacja z pozycjami zamówienia
     items = relationship("OrderItem", back_populates="order")
@@ -23,6 +32,6 @@ class OrderItem(Base):
     order_id = Column(Integer, ForeignKey("store_orders.order_id"), nullable=False)
     product_id = Column(Integer, nullable=False)
     quantity = Column(Integer, nullable=False)
-    unit_price = Column(Float, nullable=False) # Cena w momencie zakupu (zabezpieczenie przed zmianą cen)
+    unit_price = Column(Float, nullable=False) # Cena w momencie zakupu
 
     order = relationship("StoreOrder", back_populates="items")

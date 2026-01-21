@@ -1,133 +1,158 @@
 import React, { useState } from 'react';
-import api from '../../api'; 
+import api from '../../api';
+import { jwtDecode } from "jwt-decode";
 
-// Dodajemy prop 'tenantId' (potrzebny tylko dla Gościa)
-const Cart = ({ items, onClearCart, tenantId }) => {
-  const [status, setStatus] = useState(null); // 'success', 'error'
-  const [guestEmail, setGuestEmail] = useState(""); // Nowe pole dla gościa
+const Cart = ({ items, onClearCart }) => {
   const [loading, setLoading] = useState(false);
+  
+  // Stan formularza
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    address: '',
+    phone: ''
+  });
 
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const isGuest = !localStorage.getItem('token'); // Sprawdzamy, czy to gość
+  const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  const handleCheckout = async () => {
-    if (items.length === 0) return;
-    setStatus(null);
+  // Obsługa wpisywania danych
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleOrderSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
 
-    // Wspólny payload dla obu przypadków (lista produktów)
-    const itemsPayload = items.map(item => ({
-        product_id: item.product_id,
-        quantity: item.quantity
-    }));
+    const orderPayload = {
+      items: items.map(i => ({ product_id: i.product_id, quantity: i.quantity })),
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      address: formData.address,
+      phone_number: formData.phone
+    };
 
     try {
-      if (!isGuest) {
-        // --- SCENARIUSZ 1: WŁAŚCICIEL (ZALOGOWANY) ---
-        // To jest Twoja stara logika
-        await api.post('/orders/', { items: itemsPayload });
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        // --- 1. ZALOGOWANY UŻYTKOWNIK ---
+        await api.post('/orders/', orderPayload);
       } else {
-        // --- SCENARIUSZ 2: GOŚĆ (NOWA LOGIKA) ---
-        
-        // Walidacja dla gościa
-        if (!guestEmail.includes('@')) {
-            alert("Podaj poprawny email!");
+        // --- 2. GOŚĆ ---
+        // Gość musi podać email i tenant_id (bierzemy z pierwszego produktu)
+        if (!formData.email) {
+            alert("Podaj email!");
             setLoading(false);
             return;
         }
-        if (!tenantId) {
-            console.error("Brak ID sklepu w Cart.jsx");
-            setStatus('error');
-            setLoading(false);
-            return;
-        }
-
-        // Strzał do nowego endpointu
         await api.post('/orders/guest', {
-            email: guestEmail,
-            items: itemsPayload,
-            tenant_id: tenantId
+          ...orderPayload,
+          email: formData.email,
+          tenant_id: items[0].tenant_id
         });
       }
 
-      // --- WSPÓLNY SUKCES ---
-      setStatus('success');
+      alert("🎉 Zamówienie złożone pomyślnie! Czekaj na potwierdzenie.");
       onClearCart();
-      setGuestEmail(""); 
-      setTimeout(() => setStatus(null), 20000); 
-
-    } catch (error) {
-      console.error("Błąd zamówienia:", error);
-      setStatus('error');
+      setShowForm(false); // Zamykamy formularz
+    } catch (err) {
+      console.error(err);
+      alert("Błąd składania zamówienia: " + (err.response?.data?.detail || "Nieznany błąd"));
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
-  if (items.length === 0 && status !== 'success') {
+  if (items.length === 0) {
     return <div className="text-muted text-center py-3">Twój koszyk jest pusty.</div>;
   }
 
+  // --- WIDOK FORMULARZA ZAMÓWIENIA ---
+  if (showForm) {
+    return (
+        <div className="p-3 bg-light border rounded">
+            <h5 className="mb-3">📝 Dane do dostawy</h5>
+            <form onSubmit={handleOrderSubmit}>
+                
+                {/* Email pokazujemy tylko jeśli użytkownik NIE jest zalogowany */}
+                {!localStorage.getItem('token') && (
+                    <div className="mb-2">
+                        <label className="small">Email</label>
+                        <input type="email" name="email" required className="form-control form-control-sm" 
+                            value={formData.email} onChange={handleChange} />
+                    </div>
+                )}
+
+                <div className="row">
+                    <div className="col-6 mb-2">
+                        <label className="small">Imię</label>
+                        <input type="text" name="firstName" required className="form-control form-control-sm"
+                            value={formData.firstName} onChange={handleChange} />
+                    </div>
+                    <div className="col-6 mb-2">
+                        <label className="small">Nazwisko</label>
+                        <input type="text" name="lastName" required className="form-control form-control-sm"
+                            value={formData.lastName} onChange={handleChange} />
+                    </div>
+                </div>
+
+                <div className="mb-2">
+                    <label className="small">Adres (Ulica, nr, miasto, kod)</label>
+                    <input type="text" name="address" required className="form-control form-control-sm"
+                        value={formData.address} onChange={handleChange} />
+                </div>
+
+                <div className="mb-3">
+                    <label className="small">Telefon</label>
+                    <input type="text" name="phone" required className="form-control form-control-sm"
+                        value={formData.phone} onChange={handleChange} />
+                </div>
+
+                <div className="d-flex gap-2">
+                    <button type="submit" className="btn btn-success w-100" disabled={loading}>
+                        {loading ? "Wysyłanie..." : `Kupuję za ${totalPrice.toFixed(2)} PLN`}
+                    </button>
+                    <button type="button" className="btn btn-secondary w-100" onClick={() => setShowForm(false)}>
+                        Anuluj
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+  }
+
+  // --- WIDOK LISTY PRODUKTÓW (DOMYŚLNY) ---
   return (
     <div>
-      {/* --- KOMUNIKATY --- */}
-      {status === 'success' && (
-        <div className="alert alert-success">
-          ✅ {isGuest ? "Zamówienie wysłane! Sprawdź email." : "Zamówienie przyjęte do bazy!"}
-        </div>
-      )}
-      
-      {status === 'error' && (
-        <div className="alert alert-danger">
-          ❌ Błąd zamówienia. Spróbuj ponownie.
-        </div>
-      )}
-
-      {/* --- LISTA PRODUKTÓW --- */}
       <ul className="list-group mb-3">
         {items.map((item) => (
-          <li key={item.product_id} className="list-group-item d-flex justify-content-between lh-sm">
+          <li key={item.product_id} className="list-group-item d-flex justify-content-between align-items-center">
             <div>
-              <h6 className="my-0">{item.name}</h6>
-              <small className="text-muted">Ilość: {item.quantity}</small>
+              <div className="fw-bold">{item.name}</div>
+              <small className="text-muted">{item.quantity} szt. x {item.price.toFixed(2)}</small>
             </div>
-            <span className="text-muted">{(item.price * item.quantity).toFixed(2)} zł</span>
+            <span className="fw-bold">{(item.price * item.quantity).toFixed(2)}</span>
           </li>
         ))}
       </ul>
       
-      {/* --- SUMA --- */}
-      <div className="d-flex justify-content-between fw-bold mb-3 px-2 border-top pt-2">
-        <span>Suma:</span>
-        <span>{total.toFixed(2)} PLN</span>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h5>Suma:</h5>
+        <h4 className="text-primary">{totalPrice.toFixed(2)} PLN</h4>
       </div>
 
-      {/* --- POLE EMAIL (TYLKO DLA GOŚCIA) --- */}
-      {isGuest && items.length > 0 && (
-          <div className="mb-3">
-              <label className="form-label small">Adres email (wymagane)</label>
-              <input 
-                type="email" 
-                className="form-control form-control-sm" 
-                placeholder="klient@przyklad.pl"
-                value={guestEmail}
-                onChange={(e) => setGuestEmail(e.target.value)}
-              />
-          </div>
-      )}
-
-      {/* --- PRZYCISKI --- */}
       <div className="d-grid gap-2">
         <button 
-            onClick={handleCheckout} 
-            className="btn btn-success"
-            disabled={items.length === 0 || loading}
+            className="btn btn-success" 
+            onClick={() => setShowForm(true)} // Otwieramy formularz zamiast od razu kupować
         >
-            {loading ? "Przetwarzanie..." : (isGuest ? "📨 Zamów jako Gość" : "💰 Zapłać i Zamów")}
+          Przejdź do dostawy 🚚
         </button>
-        
-        <button onClick={onClearCart} className="btn btn-outline-secondary btn-sm">
-            Wyczyść koszyk
+        <button className="btn btn-outline-danger btn-sm" onClick={onClearCart}>
+          Wyczyść koszyk
         </button>
       </div>
     </div>

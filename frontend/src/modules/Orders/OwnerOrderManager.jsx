@@ -5,13 +5,14 @@ const OwnerOrderManager = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Pobieranie zamówień
+  // --- 1. POBIERANIE ZAMÓWIEŃ ---
   const fetchOrders = async () => {
     try {
       const response = await api.get('/orders/manage');
       setOrders(response.data);
     } catch (err) {
       console.error("Błąd pobierania zamówień:", err);
+      // alert("Nie udało się pobrać listy zamówień."); 
     } finally {
       setLoading(false);
     }
@@ -21,21 +22,23 @@ const OwnerOrderManager = () => {
     fetchOrders();
   }, []);
 
-  // Obsługa ZMIANY STATUSU
+  // --- 2. OBSŁUGA ZMIANY STATUSU (ZATWIERDŹ / ODRZUĆ) ---
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       await api.patch(`/orders/${orderId}/status`, { status: newStatus });
+      
       const message = newStatus === 'CONFIRMED' 
-        ? "✅ Zamówienie zatwierdzone!" 
+        ? "✅ Zamówienie zatwierdzone! Towar wysłany." 
         : "❌ Zamówienie odrzucone.";
+      
       alert(message);
-      fetchOrders();
+      fetchOrders(); // Odświeżamy listę
     } catch (err) {
       alert(err.response?.data?.detail || "Błąd aktualizacji statusu");
     }
   };
 
-  // Obsługa USUWANIA (To jest ta nowość!)
+  // --- 3. OBSŁUGA USUWANIA (CZYSZCZENIE HISTORII) ---
   const handleDelete = async (orderId) => {
     if (!window.confirm("Czy na pewno chcesz usunąć to zamówienie z historii?")) {
       return;
@@ -43,7 +46,7 @@ const OwnerOrderManager = () => {
 
     try {
       await api.delete(`/orders/${orderId}`);
-      // Usuwamy lokalnie z listy
+      // Usuwamy lokalnie z listy, żeby nie przeładowywać strony
       setOrders(orders.filter(o => o.order_id !== orderId));
     } catch (err) {
       alert("Nie udało się usunąć zamówienia.");
@@ -64,7 +67,7 @@ const OwnerOrderManager = () => {
               <tr>
                 <th>ID</th>
                 <th>Data</th>
-                <th>Klient (ID)</th>
+                <th>Dane Klienta</th> {/* Zmieniliśmy nagłówek */}
                 <th>Kwota</th>
                 <th>Status</th>
                 <th className="text-end">Akcje</th>
@@ -73,24 +76,45 @@ const OwnerOrderManager = () => {
             <tbody>
               {orders.map((order) => (
                 <tr key={order.order_id}>
+                  {/* ID */}
                   <td>#{order.order_id}</td>
+                  
+                  {/* DATA */}
                   <td>
-                    {/* Tutaj naprawiliśmy problem roku 1970 */}
                     {order.created_at 
                         ? new Date(order.created_at).toLocaleString() 
                         : <span className="text-muted small">Brak daty</span>}
                   </td>
-                  <td>User: {order.user_id}</td>
+
+                  {/* DANE KLIENTA (IMIĘ, ADRES, TELEFON) */}
+                  <td>
+                    {order.first_name ? (
+                        <>
+                            <div className="fw-bold">{order.first_name} {order.last_name}</div>
+                            <div className="small text-muted">{order.address}</div>
+                            <div className="small text-muted">📞 {order.phone_number}</div>
+                        </>
+                    ) : (
+                        // Dla starych zamówień bez danych wyświetlamy ID
+                        <div className="text-muted small">User ID: {order.user_id}</div>
+                    )}
+                  </td>
+
+                  {/* KWOTA */}
                   <td className="fw-bold">{order.total_amount.toFixed(2)} PLN</td>
                   
+                  {/* STATUS */}
                   <td>
                     {order.status === 'NEW' && <span className="badge bg-warning text-dark">OCZEKUJE</span>}
                     {order.status === 'CONFIRMED' && <span className="badge bg-success">ZATWIERDZONE</span>}
                     {order.status === 'REJECTED' && <span className="badge bg-danger">ODRZUCONE</span>}
                   </td>
 
+                  {/* PRZYCISKI AKCJI */}
                   <td className="text-end">
+                    
                     {order.status === 'NEW' ? (
+                      // PRZYCISKI DECYZYJNE
                       <div className="d-flex justify-content-end gap-2">
                         <button 
                           className="btn btn-success btn-sm"
@@ -108,7 +132,7 @@ const OwnerOrderManager = () => {
                         </button>
                       </div>
                     ) : (
-                      // Przycisk USUWANIA dla zakończonych zamówień
+                      // PRZYCISK USUWANIA (DLA ZAKOŃCZONYCH)
                       <button 
                         className="btn btn-light text-danger btn-sm border"
                         onClick={() => handleDelete(order.order_id)}

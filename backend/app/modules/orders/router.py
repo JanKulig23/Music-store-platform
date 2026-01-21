@@ -45,7 +45,12 @@ def create_order(
         user_id=current_user.user_id,
         total_amount=total_amount,
         status="NEW",
-        created_at=datetime.now()
+        created_at=datetime.now(),
+        # --- NOWOŚĆ: ZAPISUJEMY DANE ADRESOWE ---
+        first_name=order_data.first_name,
+        last_name=order_data.last_name,
+        address=order_data.address,
+        phone_number=order_data.phone_number
     )
     db.add(new_order)
     db.flush() # Pobieramy ID zamówienia
@@ -74,7 +79,7 @@ def create_guest_order(order_data: schemas.GuestOrderCreate, db: Session = Depen
     
     # 2. Jeśli nie istnieje -> Tworzymy konto "Automatycznego Klienta"
     if not user:
-        # Generujemy losowe hasło (bo klient go nie zna, ale baza wymaga hasła)
+        # Generujemy losowe hasło
         chars = string.ascii_letters + string.digits
         random_password = ''.join(random.choice(chars) for i in range(12))
         
@@ -96,19 +101,24 @@ def create_guest_order(order_data: schemas.GuestOrderCreate, db: Session = Depen
         if not product:
             raise HTTPException(status_code=404, detail=f"Produkt {item.product_id} nie istnieje")
         
-        # Sprawdzamy czy produkt należy do sklepu, w którym kupuje gość
+        # Sprawdzamy czy produkt należy do sklepu
         if product.tenant_id != order_data.tenant_id:
              raise HTTPException(status_code=400, detail="Produkt nie należy do tego sklepu")
 
         total_amount += product.price * item.quantity
 
-    # 4. Tworzymy zamówienie przypisane do tego usera (istniejącego lub nowego)
+    # 4. Tworzymy zamówienie
     new_order = models.StoreOrder(
         tenant_id=order_data.tenant_id,
-        user_id=user.user_id, # <--- Tu wpada ID
+        user_id=user.user_id,
         total_amount=total_amount,
         status="NEW",
-        created_at=datetime.now()
+        created_at=datetime.now(),
+        # --- NOWOŚĆ: ZAPISUJEMY DANE ADRESOWE ---
+        first_name=order_data.first_name,
+        last_name=order_data.last_name,
+        address=order_data.address,
+        phone_number=order_data.phone_number
     )
     db.add(new_order)
     db.flush() 
@@ -144,10 +154,10 @@ def get_tenant_orders(
     return db.query(models.StoreOrder).filter(models.StoreOrder.tenant_id == current_user.tenant_id).order_by(models.StoreOrder.order_id.desc()).all()
 
 
-# --- 5. ZATWIERDZANIE / ODRZUCANIE ZAMÓWIENIA (ZMIANA STANU MAGAZYNOWEGO) ---
+# --- 5. ZATWIERDZANIE / ODRZUCANIE ZAMÓWIENIA ---
 
 class OrderStatusUpdate(BaseModel):
-    status: str  # Oczekujemy: "CONFIRMED" lub "REJECTED"
+    status: str 
 
 @router.patch("/{order_id}/status")
 def process_order(
@@ -171,31 +181,22 @@ def process_order(
 
     # 4. LOGIKA ZATWIERDZANIA (CONFIRMED)
     if status_data.status == "CONFIRMED":
-        # Sprawdzamy czy nie próbujemy zatwierdzić 2 razy (żeby nie odjęło towaru podwójnie)
         if order.status == "CONFIRMED":
              raise HTTPException(status_code=400, detail="To zamówienie jest już zatwierdzone")
 
-        # Iterujemy po produktach i odejmujemy stan
         for item in order.items:
             product = db.query(Product).filter(Product.product_id == item.product_id).first()
-            
-            # Czy jest dość towaru?
             if product.stock_quantity < item.quantity:
                 raise HTTPException(
                     status_code=400, 
                     detail=f"Za mało towaru: {product.name}. Dostępne: {product.stock_quantity}, Wymagane: {item.quantity}"
                 )
-            
-            # Odejmujemy
             product.stock_quantity -= item.quantity
         
-        # Zmieniamy status
         order.status = "CONFIRMED"
 
     # 5. LOGIKA ODRZUCANIA (REJECTED)
     elif status_data.status == "REJECTED":
-        # Jeśli zamówienie było wcześniej zatwierdzone i odjęło towar, 
-        # a teraz je odrzucamy -> powinniśmy towar przywrócić!
         if order.status == "CONFIRMED":
             for item in order.items:
                 product = db.query(Product).filter(Product.product_id == item.product_id).first()
@@ -223,12 +224,11 @@ def delete_order(
     if not order:
         raise HTTPException(status_code=404, detail="Zamówienie nie istnieje")
     
-    # 2. Sprawdzamy czy to Twój sklep
+    # 2. Sprawdź czy to Twój sklep
     if order.tenant_id != current_user.tenant_id:
         raise HTTPException(status_code=403, detail="Nie możesz usunąć tego zamówienia")
 
     # 3. Najpierw usuwamy pozycje (items) tego zamówienia
-    # (Inaczej baza Oracle zablokuje usunięcie przez Klucz Obcy)
     db.query(models.OrderItem).filter(models.OrderItem.order_id == order_id).delete()
     
     # 4. Usuwamy główne zamówienie
