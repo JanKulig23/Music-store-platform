@@ -1,6 +1,7 @@
 import random
 import string
 from typing import List
+from datetime import datetime
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -43,7 +44,8 @@ def create_order(
         tenant_id=current_user.tenant_id,
         user_id=current_user.user_id,
         total_amount=total_amount,
-        status="NEW"
+        status="NEW",
+        created_at=datetime.now()
     )
     db.add(new_order)
     db.flush() # Pobieramy ID zamówienia
@@ -105,7 +107,8 @@ def create_guest_order(order_data: schemas.GuestOrderCreate, db: Session = Depen
         tenant_id=order_data.tenant_id,
         user_id=user.user_id, # <--- Tu wpada ID
         total_amount=total_amount,
-        status="NEW"
+        status="NEW",
+        created_at=datetime.now()
     )
     db.add(new_order)
     db.flush() 
@@ -131,7 +134,7 @@ def get_my_orders(db: Session = Depends(get_db), current_user: User = Depends(ge
     return db.query(models.StoreOrder).filter(models.StoreOrder.user_id == current_user.user_id).all()
 
 
-# --- 4. [NOWE] POBIERANIE WSZYSTKICH ZAMÓWIEŃ SKLEPU (DLA WŁAŚCICIELA) ---
+# --- 4. POBIERANIE WSZYSTKICH ZAMÓWIEŃ SKLEPU (DLA WŁAŚCICIELA) ---
 @router.get("/manage", response_model=list[schemas.OrderResponse])
 def get_tenant_orders(
     db: Session = Depends(get_db), 
@@ -141,7 +144,7 @@ def get_tenant_orders(
     return db.query(models.StoreOrder).filter(models.StoreOrder.tenant_id == current_user.tenant_id).order_by(models.StoreOrder.order_id.desc()).all()
 
 
-# --- 5. [NOWE] ZATWIERDZANIE / ODRZUCANIE ZAMÓWIENIA (ZMIANA STANU MAGAZYNOWEGO) ---
+# --- 5. ZATWIERDZANIE / ODRZUCANIE ZAMÓWIENIA (ZMIANA STANU MAGAZYNOWEGO) ---
 
 class OrderStatusUpdate(BaseModel):
     status: str  # Oczekujemy: "CONFIRMED" lub "REJECTED"
@@ -206,3 +209,30 @@ def process_order(
     db.commit()
     db.refresh(order)
     return order
+
+
+# --- 6. USUWANIE ZAMÓWIENIA (HISTORIA) ---
+@router.delete("/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # 1. Szukamy zamówienia
+    order = db.query(models.StoreOrder).filter(models.StoreOrder.order_id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Zamówienie nie istnieje")
+    
+    # 2. Sprawdzamy czy to Twój sklep
+    if order.tenant_id != current_user.tenant_id:
+        raise HTTPException(status_code=403, detail="Nie możesz usunąć tego zamówienia")
+
+    # 3. Najpierw usuwamy pozycje (items) tego zamówienia
+    # (Inaczej baza Oracle zablokuje usunięcie przez Klucz Obcy)
+    db.query(models.OrderItem).filter(models.OrderItem.order_id == order_id).delete()
+    
+    # 4. Usuwamy główne zamówienie
+    db.delete(order)
+    db.commit()
+    
+    return None

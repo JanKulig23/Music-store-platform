@@ -9,7 +9,6 @@ const ProductList = ({ onAddToCart, publicTenantId = null }) => {
   // --- STANY EDYCJI ---
   const [editingId, setEditingId] = useState(null);
   const [tempPrice, setTempPrice] = useState("");
-  // NOWOŚĆ: Stan dla edycji magazynu
   const [tempStock, setTempStock] = useState(""); 
 
   const fetchProducts = async () => {
@@ -39,26 +38,31 @@ const ProductList = ({ onAddToCart, publicTenantId = null }) => {
     fetchProducts();
   }, [publicTenantId]);
 
+  // --- FUNKCJA DO ZDJĘĆ ---
+  const getProductImage = (productId) => {
+    // Zakładamy, że masz 5 zdjęć: 1.jpg, 2.jpg ... 5.jpg w folderze public/guitars/
+    const numberOfImages = 5;
+    const imageIndex = (productId % numberOfImages) + 1; 
+    return `/guitars/${imageIndex}.jpg`;
+  };
+
   const isOwnerMode = !publicTenantId; 
 
   const startEditing = (product) => {
     if (!isOwnerMode) return;
     setEditingId(product.product_id);
     setTempPrice(product.price);
-    // Wczytujemy obecny stan magazynowy do inputa
     setTempStock(product.stock_quantity); 
   };
 
   const saveChanges = async (productId) => {
     if (!isOwnerMode) return;
     try {
-      // Wysyłamy do backendu zarówno cenę jak i ilość
       await api.patch(`/catalog/local/${productId}`, {
         price: parseFloat(tempPrice),
         stock_quantity: parseInt(tempStock)
       });
       
-      // Aktualizujemy widok bez odświeżania strony
       setProducts(products.map(p => 
         p.product_id === productId ? { 
             ...p, 
@@ -83,30 +87,40 @@ const ProductList = ({ onAddToCart, publicTenantId = null }) => {
   return (
     <div className="row g-4">
       {products.map((product) => {
-          // Produkt dostępny tylko gdy ma cenę I stan magazynowy
           const isAvailable = product.price > 0 && product.stock_quantity > 0;
 
           return (
           <div key={product.product_id} className="col-md-6 col-lg-4">
             <div className={`card h-100 shadow-sm ${!isAvailable && isOwnerMode ? 'border-warning' : ''}`}>
               
-              <div className="bg-light d-flex align-items-center justify-content-center position-relative" style={{height: '200px'}}>
-                  <span style={{fontSize: '3rem'}}>🎸</span>
+              {/* --- ZDJĘCIE (ZAMIAST EMOTKI) --- */}
+              <div style={{ height: '200px', overflow: 'hidden', position: 'relative' }}>
+                  <img 
+                    src={getProductImage(product.product_id)} 
+                    alt={product.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
                   
-                  {/* Badge "Wyprzedane" jeśli stan to 0 */}
+                  {/* Badge "Wyprzedane" na zdjęciu */}
                   {product.stock_quantity === 0 && (
-                      <span className="position-absolute top-0 end-0 badge bg-danger m-2">
+                      <div className="position-absolute top-0 end-0 bg-danger text-white px-2 py-1 m-2 rounded fw-bold small">
                           Wyprzedane
-                      </span>
+                      </div>
                   )}
               </div>
               
               <div className="card-body d-flex flex-column">
-                <h5 className="card-title">{product.name}</h5>
+                <h5 className="card-title text-primary">{product.name}</h5>
                 <p className="card-text text-muted small mb-1">SKU: {product.sku}</p>
-                <p className="card-text text-truncate">{product.description}</p>
                 
-                {/* Ostrzeżenie dla właściciela (widoczne tylko dla niego) */}
+                {/* Opis skrócony */}
+                <p className="card-text text-muted small">
+                    {product.description && product.description.length > 80 
+                        ? product.description.substring(0, 80) + "..." 
+                        : product.description}
+                </p>
+                
+                {/* Ostrzeżenie dla właściciela */}
                 {!isAvailable && isOwnerMode && !editingId && (
                     <div className="alert alert-warning py-1 px-2 small mb-2 text-center">
                         ⚠️ Ustal cenę i stan!
@@ -115,7 +129,7 @@ const ProductList = ({ onAddToCart, publicTenantId = null }) => {
 
                 <div className="mt-auto">
                   
-                  {/* --- TRYB EDYCJI (CENA + ILOŚĆ) --- */}
+                  {/* --- TRYB EDYCJI --- */}
                   {editingId === product.product_id ? (
                       <div className="mb-2 p-2 bg-light border rounded">
                           <label className="small text-muted">Cena (PLN):</label>
@@ -136,10 +150,9 @@ const ProductList = ({ onAddToCart, publicTenantId = null }) => {
                       <div>
                           <div className="d-flex justify-content-between align-items-end mb-3">
                               <div>
-                                  <span className={`h5 mb-0 d-block ${product.price === 0 ? 'text-danger' : 'text-primary'}`}>
+                                  <span className={`h5 mb-0 d-block ${product.price === 0 ? 'text-danger' : 'text-dark'}`}>
                                       {product.price.toFixed(2)} PLN
                                   </span>
-                                  {/* Wyświetlanie stanu magazynowego */}
                                   <small className={`fw-bold ${product.stock_quantity > 0 ? 'text-success' : 'text-danger'}`}>
                                       {product.stock_quantity > 0 ? `Dostępne: ${product.stock_quantity} szt.` : 'Brak w magazynie'}
                                   </small>
@@ -153,9 +166,9 @@ const ProductList = ({ onAddToCart, publicTenantId = null }) => {
                           </div>
 
                           <button 
-                            className="btn btn-outline-success w-100"
+                            className="btn btn-primary w-100"
                             onClick={() => onAddToCart(product)}
-                            disabled={!isAvailable} // Blokada przycisku
+                            disabled={!isAvailable}
                           >
                             {product.stock_quantity > 0 ? "Do koszyka 🛒" : "Produkt niedostępny"}
                           </button>

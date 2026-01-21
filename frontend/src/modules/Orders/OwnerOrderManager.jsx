@@ -5,14 +5,13 @@ const OwnerOrderManager = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Pobieranie zamówień przy wejściu na stronę
+  // Pobieranie zamówień
   const fetchOrders = async () => {
     try {
       const response = await api.get('/orders/manage');
       setOrders(response.data);
     } catch (err) {
       console.error("Błąd pobierania zamówień:", err);
-      alert("Nie udało się pobrać listy zamówień.");
     } finally {
       setLoading(false);
     }
@@ -22,31 +21,42 @@ const OwnerOrderManager = () => {
     fetchOrders();
   }, []);
 
-  // Obsługa kliknięcia Zatwierdź / Odrzuć
+  // Obsługa ZMIANY STATUSU
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       await api.patch(`/orders/${orderId}/status`, { status: newStatus });
-      
       const message = newStatus === 'CONFIRMED' 
-        ? "✅ Zamówienie zatwierdzone! Stan magazynowy zaktualizowany." 
-        : "❌ Zamówienie odrzucone. Towar wraca do puli.";
-      
+        ? "✅ Zamówienie zatwierdzone!" 
+        : "❌ Zamówienie odrzucone.";
       alert(message);
-      fetchOrders(); // Odświeżamy listę, żeby zobaczyć nowy status
+      fetchOrders();
     } catch (err) {
-      // Wyświetlamy błąd z backendu (np. "Za mało towaru")
       alert(err.response?.data?.detail || "Błąd aktualizacji statusu");
+    }
+  };
+
+  // Obsługa USUWANIA (To jest ta nowość!)
+  const handleDelete = async (orderId) => {
+    if (!window.confirm("Czy na pewno chcesz usunąć to zamówienie z historii?")) {
+      return;
+    }
+
+    try {
+      await api.delete(`/orders/${orderId}`);
+      // Usuwamy lokalnie z listy
+      setOrders(orders.filter(o => o.order_id !== orderId));
+    } catch (err) {
+      alert("Nie udało się usunąć zamówienia.");
     }
   };
 
   if (loading) return <div className="text-center p-5">Ładowanie zamówień...</div>;
 
   return (
-    <div className="container mt-4">
-      <h2 className="mb-4">📦 Zarządzanie Zamówieniami</h2>
+    <div className="container mt-2">
       
       {orders.length === 0 ? (
-        <div className="alert alert-info">Brak zamówień w systemie.</div>
+        <div className="alert alert-info text-center">🎉 Wszystko posprzątane! Brak zamówień.</div>
       ) : (
         <div className="table-responsive">
           <table className="table table-hover shadow-sm align-middle bg-white rounded">
@@ -54,45 +64,58 @@ const OwnerOrderManager = () => {
               <tr>
                 <th>ID</th>
                 <th>Data</th>
-                <th>Klient (Email)</th>
+                <th>Klient (ID)</th>
                 <th>Kwota</th>
                 <th>Status</th>
-                <th>Akcje</th>
+                <th className="text-end">Akcje</th>
               </tr>
             </thead>
             <tbody>
               {orders.map((order) => (
                 <tr key={order.order_id}>
                   <td>#{order.order_id}</td>
-                  <td>{new Date(order.created_at).toLocaleString()}</td>
-                  {/* Zakładamy, że backend w przyszłości może zwrócić email usera, na razie ID */}
-                  <td>User ID: {order.user_id}</td>
+                  <td>
+                    {/* Tutaj naprawiliśmy problem roku 1970 */}
+                    {order.created_at 
+                        ? new Date(order.created_at).toLocaleString() 
+                        : <span className="text-muted small">Brak daty</span>}
+                  </td>
+                  <td>User: {order.user_id}</td>
                   <td className="fw-bold">{order.total_amount.toFixed(2)} PLN</td>
+                  
                   <td>
                     {order.status === 'NEW' && <span className="badge bg-warning text-dark">OCZEKUJE</span>}
                     {order.status === 'CONFIRMED' && <span className="badge bg-success">ZATWIERDZONE</span>}
                     {order.status === 'REJECTED' && <span className="badge bg-danger">ODRZUCONE</span>}
                   </td>
-                  <td>
+
+                  <td className="text-end">
                     {order.status === 'NEW' ? (
-                      <div className="d-flex gap-2">
+                      <div className="d-flex justify-content-end gap-2">
                         <button 
                           className="btn btn-success btn-sm"
                           onClick={() => handleStatusChange(order.order_id, 'CONFIRMED')}
-                          title="Zatwierdź i wyślij towar"
+                          title="Zatwierdź"
                         >
-                          ✅ Zatwierdź
+                          ✅
                         </button>
                         <button 
                           className="btn btn-outline-danger btn-sm"
                           onClick={() => handleStatusChange(order.order_id, 'REJECTED')}
-                          title="Odrzuć zamówienie"
+                          title="Odrzuć"
                         >
-                          ❌ Odrzuć
+                          ❌
                         </button>
                       </div>
                     ) : (
-                        <span className="text-muted small">Proces zakończony</span>
+                      // Przycisk USUWANIA dla zakończonych zamówień
+                      <button 
+                        className="btn btn-light text-danger btn-sm border"
+                        onClick={() => handleDelete(order.order_id)}
+                        title="Usuń z historii"
+                      >
+                        🗑️ Usuń
+                      </button>
                     )}
                   </td>
                 </tr>
