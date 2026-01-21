@@ -1,5 +1,7 @@
 import random
 import string
+from typing import List
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -15,7 +17,7 @@ router = APIRouter(
     tags=["Orders (Zamówienia)"]
 )
 
-# --- ZAMÓWIENIE DLA ZALOGOWANEGO UŻYTKOWNIKA ---
+# --- 1. ZAMÓWIENIE DLA ZALOGOWANEGO UŻYTKOWNIKA ---
 @router.post("/", response_model=schemas.OrderResponse)
 def create_order(
     order_data: schemas.OrderCreate, 
@@ -62,7 +64,7 @@ def create_order(
     return new_order
 
 
-# --- ZAMÓWIENIE DLA GOŚCIA (BEZ LOGOWANIA) ---
+# --- 2. ZAMÓWIENIE DLA GOŚCIA (BEZ LOGOWANIA) ---
 @router.post("/guest", status_code=201)
 def create_guest_order(order_data: schemas.GuestOrderCreate, db: Session = Depends(get_db)):
     # 1. Sprawdzamy, czy użytkownik o takim emailu już istnieje
@@ -122,6 +124,85 @@ def create_guest_order(order_data: schemas.GuestOrderCreate, db: Session = Depen
     db.commit()
     return {"msg": "Zamówienie przyjęte (Gość)", "order_id": new_order.order_id}
 
+
+# --- 3. POBIERANIE MOICH ZAMÓWIEŃ (DLA KLIENTA) ---
 @router.get("/", response_model=list[schemas.OrderResponse])
 def get_my_orders(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(models.StoreOrder).filter(models.StoreOrder.user_id == current_user.user_id).all()
+
+
+# --- 4. [NOWE] POBIERANIE WSZYSTKICH ZAMÓWIEŃ SKLEPU (DLA WŁAŚCICIELA) ---
+@router.get("/manage", response_model=list[schemas.OrderResponse])
+def get_tenant_orders(
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    # Właściciel widzi wszystkie zamówienia w swoim tenancie
+    return db.query(models.StoreOrder).filter(models.StoreOrder.tenant_id == current_user.tenant_id).order_by(models.StoreOrder.order_id.desc()).all()
+
+
+# --- 5. [NOWE] ZATWIERDZANIE / ODRZUCANIE ZAMÓWIENIA (ZMIANA STANU MAGAZYNOWEGO) ---
+
+class OrderStatusUpdate(BaseModel):
+    status: str  # Oczekujemy: "CONFIRMED" lub "REJECTED"
+
+@router.patch("/{order_id}/status")
+def process_order(
+    order_id: int, 
+    status_data: OrderStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # 1. Pobierz zamówienie
+    order = db.query(models.StoreOrder).filter(models.StoreOrder.order_id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Zamówienie nie istnieje")
+
+    # 2. Sprawdź czy to właściciel tego sklepu
+    if order.tenant_id != current_user.tenant_id:
+        raise HTTPException(status_code=403, detail="Brak uprawnień do tego zamówienia")
+
+    # 3. Jeśli status jest już taki sam, nic nie rób
+    if order.status == status_data.status:
+        return order
+
+    # 4. LOGIKA ZATWIERDZANIA (CONFIRMED)
+    if status_data.status == "CONFIRMED":
+        # Sprawdzamy czy nie próbujemy zatwierdzić 2 razy (żeby nie odjęło towaru podwójnie)
+        if order.status == "CONFIRMED":
+             raise HTTPException(status_code=400, detail="To zamówienie jest już zatwierdzone")
+
+        # Iterujemy po produktach i odejmujemy stan
+        for item in order.items:
+            product = db.query(Product).filter(Product.product_id == item.product_id).first()
+            
+            # Czy jest dość towaru?
+            if product.stock_quantity < item.quantity:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Za mało towaru: {product.name}. Dostępne: {product.stock_quantity}, Wymagane: {item.quantity}"
+                )
+            
+            # Odejmujemy
+            product.stock_quantity -= item.quantity
+        
+        # Zmieniamy status
+        order.status = "CONFIRMED"
+
+    # 5. LOGIKA ODRZUCANIA (REJECTED)
+    elif status_data.status == "REJECTED":
+        # Jeśli zamówienie było wcześniej zatwierdzone i odjęło towar, 
+        # a teraz je odrzucamy -> powinniśmy towar przywrócić!
+        if order.status == "CONFIRMED":
+            for item in order.items:
+                product = db.query(Product).filter(Product.product_id == item.product_id).first()
+                product.stock_quantity += item.quantity
+        
+        order.status = "REJECTED"
+    
+    else:
+        raise HTTPException(status_code=400, detail="Nieprawidłowy status. Użyj CONFIRMED lub REJECTED")
+
+    db.commit()
+    db.refresh(order)
+    return order

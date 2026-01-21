@@ -2,9 +2,12 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import StorePage from './pages/StorePage';
-import HomePage from './pages/HomePage'; // <--- Nowy import
+import HomePage from './pages/HomePage';
 
-// Strażnik (bez zmian)
+// --- NOWY IMPORT ---
+import OwnerOrderManager from './modules/Orders/OwnerOrderManager';
+
+// Strażnik (bez zmian - chroni panel właściciela)
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
   if (!token) return <Navigate to="/login" replace />;
@@ -21,7 +24,7 @@ function App() {
         {/* 2. Logowanie i Rejestracja (Dla Właściciela) */}
         <Route path="/login" element={<LoginPage />} />
         
-        {/* 3. Panel Zarządzania (Dla Właściciela - Chroniony) */}
+        {/* 3. Panel Zarządzania Sklepem (Dla Właściciela - Chroniony) */}
         <Route 
           path="/store" 
           element={
@@ -30,9 +33,21 @@ function App() {
             </ProtectedRoute>
           } 
         />
+
+        {/* 4. [NOWE] Zarządzanie Zamówieniami (Dla Właściciela - Chronione) */}
+        <Route 
+          path="/manage-orders" 
+          element={
+            <ProtectedRoute>
+              <OwnerOrderManager />
+            </ProtectedRoute>
+          } 
+        />
         
         {/* Przekierowania */}
         <Route path="/dashboard" element={<Navigate to="/store" replace />} />
+        
+        {/* Catch-all: Jak nie znajdzie trasy, wraca na stronę główną */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
