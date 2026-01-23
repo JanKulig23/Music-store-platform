@@ -5,17 +5,41 @@ from sqlalchemy import pool
 
 from alembic import context
 
+# Importujemy konfigurację bazy i Base
 from app.core.database import SQLALCHEMY_DATABASE_URL, Base
 
-from app.modules.tenancy.models import Tenant, User
-from app.modules.catalog.models import Product
-from app.modules.inventory.models import Inventory
-from app.modules.tenancy.models import User, Tenant, StoreOrder, OrderItem
-from app.modules.catalog.models import Product
-from app.core.database import Base
+# --- IMPORTY MODELI ---
+# Tutaj importujemy tylko to, co na 100% istnieje w kodzie.
+# Dzięki temu Alembic "widzi" Twoje tabele i może wygenerować migracje.
+
+try:
+    # Moduł Tenancy (Najemcy, Użytkownicy)
+    from app.modules.tenancy.models import Tenant, User
+except ImportError:
+    pass
+
+try:
+    # Moduł Catalog (Produkty)
+    from app.modules.catalog.models import Product
+except ImportError:
+    pass
+
+try:
+    # Moduł Inventory (Magazyn)
+    from app.modules.inventory.models import Inventory
+except ImportError:
+    pass
+
+# Moduł Sales (Zamówienia) - zakomentowany, dopóki nie stworzysz plików
+# try:
+#     from app.modules.sales.models import StoreOrder, OrderItem
+# except ImportError:
+#     pass
+# -----------------------
 
 config = context.config
 
+# Nadpisujemy URL z pliku alembic.ini naszym URLem z aplikacji (zmiennych środowiskowych)
 config.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
 
 if config.config_file_name is not None:
@@ -23,9 +47,9 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
--
 def include_object(object, name, type_, reflected, compare_to):
-    
+    # Ignorujemy systemowe tabele Oracle (logi, widoki zmaterializowane itp.)
+    # To zapobiega sytuacji, w której Alembic próbuje usunąć wewnętrzne tabele Oracle.
     if type_ == "table" and name and name.upper().startswith(("LOGMNR", "MVIEW", "AQ$", "DEF$", "REPCAT$", "OL$", "WRI$", "LOGSTDBY")):
         return False
     
@@ -33,8 +57,8 @@ def include_object(object, name, type_, reflected, compare_to):
         return True
     return True
 
-
 def run_migrations_offline() -> None:
+    """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -48,6 +72,7 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 def run_migrations_online() -> None:
+    """Run migrations in 'online' mode."""
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

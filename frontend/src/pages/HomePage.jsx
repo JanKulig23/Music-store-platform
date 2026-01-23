@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Importujemy komponenty sklepu
-import ProductList from '../modules/Catalog/ProductList'; 
+import ProductList from '../modules/catalog/ProductList'; 
 import Cart from '../modules/Cart/Cart';
 
 const HomePage = () => {
   // --- KONFIGURACJA ---
-  // To jest ID Twojego sklepu. Musi być takie samo jak w bazie danych.
-  const PUBLIC_STORE_ID = 21; 
+  // To jest ID sklepu.
+  const PUBLIC_STORE_ID = 2; 
 
   const [cartItems, setCartItems] = useState([]);
   const navigate = useNavigate();

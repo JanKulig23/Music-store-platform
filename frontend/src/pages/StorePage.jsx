@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import ProductList from '../modules/Catalog/ProductList'; 
+import ProductList from '../modules/catalog/ProductList'; 
 import Cart from '../modules/Cart/Cart';
 import AddProductForm from '../modules/catalog/AddProductForm'; 
 import GlobalCatalog from '../modules/catalog/GlobalCatalog';

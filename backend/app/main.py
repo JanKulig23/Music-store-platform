@@ -14,7 +14,9 @@ app = FastAPI(
 
 # --- KONFIGURACJA CORS (To pozwala Reactowi łączyć się z API) ---
 origins = [
-    "http://localhost:5173",  # Adres naszego Frontendu
+    "http://localhost:3000",  # Adres naszego Frontendu
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",      # Zostawmy na wszelki wypadek (dla deweloperki lokalnej)
     "http://127.0.0.1:5173",
 ]
 

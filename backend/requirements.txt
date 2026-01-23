@@ -13,3 +13,9 @@ starlette==0.50.0
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.38.0
+oracledb
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+email-validator
+alembic
