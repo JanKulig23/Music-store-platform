@@ -68,23 +68,46 @@ def create_local_product(
 @router.get("/local/{tenant_id}")
 def get_tenant_products(
     tenant_id: int, 
-    page: int = 1,      # Numer strony (domyślnie 1)
-    limit: int = 20,    # Ilość na stronę (domyślnie 20)
+    page: int = 1, 
+    limit: int = 20,
+    search: Optional[str] = None,
+    sort_by: str = "newest",  # <--- Opcje: newest, price, name
+    sort_order: str = "asc",  # <--- Opcje: asc, desc
     db: Session = Depends(get_db)
 ):
     skip = (page - 1) * limit
     
-    # 1. Liczymy wszystkie produkty tego sklepu (do paginacji na froncie)
-    total_count = db.query(models.Product).filter(models.Product.tenant_id == tenant_id).count()
+    # 1. Budujemy zapytanie bazowe
+    query = db.query(models.Product).filter(models.Product.tenant_id == tenant_id)
     
-    # 2. Pobieramy tylko wycinek (offset/limit)
-    products = db.query(models.Product)\
-        .filter(models.Product.tenant_id == tenant_id)\
-        .offset(skip)\
-        .limit(limit)\
-        .all()
+    # 2. Wyszukiwanie (Search)
+    if search:
+        search_fmt = f"%{search}%"
+        query = query.filter(
+            (models.Product.name.ilike(search_fmt)) | 
+            (models.Product.sku.ilike(search_fmt))
+        )
+    
+    # 3. Sortowanie (Sorting) <--- NOWOŚĆ
+    if sort_by == "price":
+        if sort_order == "desc":
+            query = query.order_by(models.Product.price.desc())
+        else:
+            query = query.order_by(models.Product.price.asc())
+            
+    elif sort_by == "name":
+        if sort_order == "desc":
+            query = query.order_by(models.Product.name.desc())
+        else:
+            query = query.order_by(models.Product.name.asc())
+            
+    else: # Domyślnie "newest" (po ID)
+        query = query.order_by(models.Product.product_id.desc())
+
+    # 4. Liczenie i Paginacja
+    total_count = query.count()
+    products = query.offset(skip).limit(limit).all()
         
-    # Zwracamy obiekt z danymi i metadanymi
     return {
         "total": total_count,
         "page": page,
