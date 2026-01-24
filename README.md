@@ -70,6 +70,7 @@ ALGORITHM=HS256
 
 2. **Uruchom środowisko Docker:**
 ```docker-compose up --build
+```
 
 ## 🖥️ Dostęp do Aplikacji
 
