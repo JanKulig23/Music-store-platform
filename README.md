@@ -39,13 +39,13 @@ Projekt został zrealizowany w modelu **Modularnego Monolitu** z architekturą b
 
 ```mermaid
 graph LR
-    A[Klient (React)] -->|REST API| B(API Gateway / Nginx)
-    B -->|Tenant Context| C{FastAPI Backend}
-    C -->|SQLAlchemy| D[(Oracle Database)]
-    D -->|RLS Policy| E[Dane Tenanta A]
-    D -->|RLS Policy| F[Dane Tenanta B]
+    A["Klient (React)"] -->|"REST API"| B["API Gateway / Nginx"]
+    B -->|"Tenant Context"| C{"FastAPI Backend"}
+    C -->|"SQLAlchemy"| D[("Oracle Database")]
+    D -->|"RLS Policy"| E["Dane Tenanta A"]
+    D -->|"RLS Policy"| F["Dane Tenanta B"]
 
-    ## ⚙️ Instalacja i Uruchomienie
+## ⚙️ Instalacja i Uruchomienie
 
 ### Wymagania wstępne
 * Docker Desktop (z obsługą Linux Containers)
