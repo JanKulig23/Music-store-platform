@@ -44,7 +44,8 @@ graph LR
     C -->|"SQLAlchemy"| D[("Oracle Database")]
     D -->|"RLS Policy"| E["Dane Tenanta A"]
     D -->|"RLS Policy"| F["Dane Tenanta B"]
-    ```
+```
+
 
 ## Instalacja i Uruchomienie
 
