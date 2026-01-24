@@ -45,7 +45,7 @@ graph LR
     D -->|"RLS Policy"| E["Dane Tenanta A"]
     D -->|"RLS Policy"| F["Dane Tenanta B"]
 
-## ⚙️ Instalacja i Uruchomienie
+## Instalacja i Uruchomienie
 
 ### Wymagania wstępne
 * Docker Desktop (z obsługą Linux Containers)
