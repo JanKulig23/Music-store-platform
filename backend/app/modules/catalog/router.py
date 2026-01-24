@@ -65,10 +65,32 @@ def create_local_product(
     db.refresh(new_product)
     return new_product
 
-@router.get("/local/{tenant_id}", response_model=list[schemas.ProductResponse])
-def get_tenant_products(tenant_id: int, db: Session = Depends(get_db)):
-    # Zwraca produkty sklepu - to może być publiczne dla klientów
-    return db.query(models.Product).filter(models.Product.tenant_id == tenant_id).all()
+@router.get("/local/{tenant_id}")
+def get_tenant_products(
+    tenant_id: int, 
+    page: int = 1,      # Numer strony (domyślnie 1)
+    limit: int = 20,    # Ilość na stronę (domyślnie 20)
+    db: Session = Depends(get_db)
+):
+    skip = (page - 1) * limit
+    
+    # 1. Liczymy wszystkie produkty tego sklepu (do paginacji na froncie)
+    total_count = db.query(models.Product).filter(models.Product.tenant_id == tenant_id).count()
+    
+    # 2. Pobieramy tylko wycinek (offset/limit)
+    products = db.query(models.Product)\
+        .filter(models.Product.tenant_id == tenant_id)\
+        .offset(skip)\
+        .limit(limit)\
+        .all()
+        
+    # Zwracamy obiekt z danymi i metadanymi
+    return {
+        "total": total_count,
+        "page": page,
+        "limit": limit,
+        "products": products
+    }
 
 
 # --- EDYCJA PRODUKTÓW (ZMIANA CENY, OPISU I STANU) ---
