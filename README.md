@@ -66,6 +66,7 @@ DB_PASSWORD=SecretPassword123
 DB_DSN=oracle_db:1521/xepdb1
 SECRET_KEY=twoj_tajny_klucz_jwt
 ALGORITHM=HS256
+```
 
 2. **Uruchom środowisko Docker:**
 ```docker-compose up --build
