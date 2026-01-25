@@ -19,3 +19,4 @@ passlib[bcrypt]
 python-multipart
 email-validator
 alembic
+bcrypt==4.0.1

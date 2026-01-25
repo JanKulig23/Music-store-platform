@@ -19,11 +19,8 @@ router = APIRouter(
 def create_global_product(
     product: schemas.GlobalProductCreate, 
     db: Session = Depends(get_db),
-    # ZABEZPIECZENIE: Tylko zalogowany użytkownik może dodać produkt globalny
     current_user: User = Depends(get_current_user) 
 ):
-    # Opcjonalnie: Tu można dodać sprawdzenie czy current_user.role == 'ADMIN'
-    
     if db.query(models.GlobalProduct).filter(models.GlobalProduct.ean_code == product.ean_code).first():
         raise HTTPException(status_code=400, detail="Produkt z tym kodem EAN już istnieje w bazie globalnej")
     
@@ -33,11 +30,40 @@ def create_global_product(
     db.refresh(new_gp)
     return new_gp
 
-@router.get("/global/", response_model=list[schemas.GlobalProductResponse])
-def get_global_products(db: Session = Depends(get_db)):
-    # To zostawiamy publiczne, żeby każdy mógł przeglądać katalog producenta
-    return db.query(models.GlobalProduct).all()
+# ZMIANA: Dodano paginację i wyszukiwanie (analogicznie do local)
+@router.get("/global/")
+def get_global_products(
+    page: int = 1, 
+    limit: int = 20,
+    search: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    skip = (page - 1) * limit
+    
+    # 1. Budujemy zapytanie
+    query = db.query(models.GlobalProduct)
+    
+    # 2. Wyszukiwanie (jeśli podano parametr search)
+    if search:
+        search_fmt = f"%{search}%"
+        # Szukamy po nazwie LUB kodzie EAN
+        query = query.filter(
+            (models.GlobalProduct.name.ilike(search_fmt)) | 
+            (models.GlobalProduct.ean_code.ilike(search_fmt))
+        )
 
+    # 3. Liczymy całkowitą ilość (do paginacji)
+    total_count = query.count()
+    
+    # 4. Pobieramy wycinek
+    products = query.offset(skip).limit(limit).all()
+    
+    return {
+        "total": total_count,
+        "page": page,
+        "limit": limit,
+        "products": products
+    }
 
 # --- ENDPOINTY LOKALNE (SKLEPOWE) ---
 
