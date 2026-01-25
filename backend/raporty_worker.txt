@@ -1,0 +1,58 @@
+====== RAPORT MAGAZYNOWY [2026-01-25 01:32:47] ======
+📊 Produkty w bazie: 5005
+📦 Łącznie sztuk:    251819
+💰 Wartość towaru:   1,889,601,184.92 PLN
+----------------------------------------
+⚠️ UWAGA! BRAKI MAGAZYNOWE (21):
+   ❌ Yamaha Microphone Elite 437 (SKU: Aud-437-RQVG)
+   ❌ Gibson Microphone Classic 502 (SKU: Aud-502-HBKS)
+   ❌ Fender Microphone Standard 549 (SKU: Aud-549-RI8Q)
+   ❌ Shure Amplifier Studio 875 (SKU: Acc-875-8OPR)
+   ❌ Pearl Bass Elite 934 (SKU: Gui-934-U0OD)
+   ❌ Roland Guitar Custom 1026 (SKU: Gui-1026-HVSW)
+   ❌ Gibson Microphone Studio 1102 (SKU: Aud-1102-8HNU)
+   ❌ Pearl Saxophone Standard 1245 (SKU: Acc-1245-HS06)
+   ❌ Roland Amplifier Elite 1269 (SKU: Acc-1269-XR41)
+   ❌ Shure Bass Pro 1547 (SKU: Gui-1547-X2DZ)
+   ❌ Roland Saxophone Ultra 1606 (SKU: Acc-1606-G5F1)
+   ❌ Marshall Microphone Ultra 2203 (SKU: Aud-2203-MXRP)
+   ❌ Roland Bass Standard 2387 (SKU: Gui-2387-58SJ)
+   ❌ Roland Amplifier Portable 3134 (SKU: Acc-3134-5IO0)
+   ❌ Ibanez Saxophone Classic 3155 (SKU: Acc-3155-VCJV)
+   ❌ Shure Microphone Elite 3649 (SKU: Aud-3649-JCQR)
+   ❌ Pearl Piano Ultra 4125 (SKU: Key-4125-YQGZ)
+   ❌ Yamaha Violin Classic 4151 (SKU: Acc-4151-XKKG)
+   ❌ Pearl Piano Ultra 4501 (SKU: Key-4501-T7M5)
+   ❌ Gibson Guitar Elite 4785 (SKU: Gui-4785-FYBO)
+   ❌ Pearl Microphone Custom 4892 (SKU: Aud-4892-SZ22)
+========================================
+
+====== RAPORT MAGAZYNOWY [2026-01-25 01:33:19] ======
+📊 Produkty w bazie: 5005
+📦 Łącznie sztuk:    251819
+💰 Wartość towaru:   1,889,601,184.92 PLN
+----------------------------------------
+⚠️ UWAGA! BRAKI MAGAZYNOWE (21):
+   ❌ Yamaha Microphone Elite 437 (SKU: Aud-437-RQVG)
+   ❌ Gibson Microphone Classic 502 (SKU: Aud-502-HBKS)
+   ❌ Fender Microphone Standard 549 (SKU: Aud-549-RI8Q)
+   ❌ Shure Amplifier Studio 875 (SKU: Acc-875-8OPR)
+   ❌ Pearl Bass Elite 934 (SKU: Gui-934-U0OD)
+   ❌ Roland Guitar Custom 1026 (SKU: Gui-1026-HVSW)
+   ❌ Gibson Microphone Studio 1102 (SKU: Aud-1102-8HNU)
+   ❌ Pearl Saxophone Standard 1245 (SKU: Acc-1245-HS06)
+   ❌ Roland Amplifier Elite 1269 (SKU: Acc-1269-XR41)
+   ❌ Shure Bass Pro 1547 (SKU: Gui-1547-X2DZ)
+   ❌ Roland Saxophone Ultra 1606 (SKU: Acc-1606-G5F1)
+   ❌ Marshall Microphone Ultra 2203 (SKU: Aud-2203-MXRP)
+   ❌ Roland Bass Standard 2387 (SKU: Gui-2387-58SJ)
+   ❌ Roland Amplifier Portable 3134 (SKU: Acc-3134-5IO0)
+   ❌ Ibanez Saxophone Classic 3155 (SKU: Acc-3155-VCJV)
+   ❌ Shure Microphone Elite 3649 (SKU: Aud-3649-JCQR)
+   ❌ Pearl Piano Ultra 4125 (SKU: Key-4125-YQGZ)
+   ❌ Yamaha Violin Classic 4151 (SKU: Acc-4151-XKKG)
+   ❌ Pearl Piano Ultra 4501 (SKU: Key-4501-T7M5)
+   ❌ Gibson Guitar Elite 4785 (SKU: Gui-4785-FYBO)
+   ❌ Pearl Microphone Custom 4892 (SKU: Aud-4892-SZ22)
+========================================
+

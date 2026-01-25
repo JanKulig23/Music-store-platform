@@ -53,12 +53,18 @@ services:
   backend-worker:
     build: ./backend
     container_name: music_store_worker
-    command: python -m app.worker_process 
+    # ZMIANA: Uruchamiamy plik worker.py, który właśnie napisałeś
+    command: python app/worker.py
     env_file:
       - ./backend/.env
+    environment:
+      # Nadpisujemy URL bazy, żeby na 100% pasował do Dockera
+      - DATABASE_URL=oracle+oracledb://system:SecretPassword123@database:1521/xepdb1
     depends_on:
       - database
     restart: always
+    volumes:
+      - ./backend:/app
     deploy:
       resources:
         limits:
